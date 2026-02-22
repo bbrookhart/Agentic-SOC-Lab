@@ -1,0 +1,5 @@
+id: D002
+title: Retrieval tenant/scope mismatch attempt
+severity: high
+match:
+  type: cross_tenant
