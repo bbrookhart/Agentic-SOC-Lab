@@ -165,3 +165,31 @@ When an alert fires, the next steps are:
 
 Note: This is not a full WORM ledger in v1. Future milestones can add signing (KMS), immutable storage targets, and manifest verification.
 
+###Roadmap (what I’m building next)
+
+- Policy correlation: alerts reference related POLICY_DECISION denies and rule IDs
+
+- Baselining: anomaly scoring against normal session behavior
+
+- SIEM export: outputs in Splunk HEC / Elastic bulk formats
+
+- Expanded attack battery: indirect prompt injection via RAG + tool hijacking
+
+- Hardening controls: tool schemas, strict allowlists, retrieval proofs, connector segmentation
+
+###Why this matters
+
+Agentic systems introduce a new SOC problem: the “endpoint” is a tool-using workflow, not just a laptop.
+Security teams need:
+
+- consistent telemetry
+
+- detections that understand tool context
+
+- containment playbooks
+
+- evidence that stands up to review
+
+- This lab is a practical, end-to-end demonstration of those skills.
+
+License: MIT
