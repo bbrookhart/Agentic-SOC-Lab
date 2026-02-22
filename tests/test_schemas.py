@@ -1,7 +1,12 @@
 import json
 from pathlib import Path
+
 from agentic_soc_lab.schemas import validate_base
-from tests.test_detections import ensure_fixtures, NORMAL, MAL  # reuse fixture builder
+from conftest import ensure_fixtures  # <-- same approach
+
+NORMAL = Path("data/sample_logs/session_normal.jsonl")
+MAL = Path("data/sample_logs/session_malicious.jsonl")
+
 
 def test_sample_logs_have_valid_base_schema():
     ensure_fixtures()
