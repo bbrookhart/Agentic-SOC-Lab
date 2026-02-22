@@ -10,6 +10,7 @@ agentic-sim = "agentic_soc_lab.simulate:main"
 agentic-detect = "agentic_soc_lab.detect:main"
 agentic-triage = "agentic_soc_lab.triage:main"
 agentic-evidence = "agentic_soc_lab.evidence_pack:main"
+agentic-export = "agentic_soc_lab.export:main"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
