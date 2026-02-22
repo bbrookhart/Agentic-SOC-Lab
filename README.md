@@ -113,12 +113,12 @@ python -m agentic_soc_lab.simulate \
 ### 3) Run detections against the malicious session
 
 ###You should see console output like:
+[medium] D001 Tool loop / repeated tool calls …
 
 [high] D002 Retrieval tenant/scope mismatch attempt …
 
 [critical] D003 Sensitive data egress via external tool …
 
-[medium] D001 Tool loop / repeated tool calls …
 
 ###4) Append alerts into a case file (SOC workflow)
 python -m agentic_soc_lab.triage \
