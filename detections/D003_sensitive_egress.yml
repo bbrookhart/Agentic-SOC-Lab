@@ -1,0 +1,10 @@
+id: D003
+title: Sensitive data egress via external tool
+severity: critical
+match:
+  external_tools: ["web_request","email_send","webhook_post"]
+  patterns:
+    - "AKIA[0-9A-Z]{16}"          # AWS access key
+    - "-----BEGIN PRIVATE KEY-----"
+    - "\\b\\d{3}-\\d{2}-\\d{4}\\b" # SSN
+    - "xox[baprs]-"              # Slack token prefix
