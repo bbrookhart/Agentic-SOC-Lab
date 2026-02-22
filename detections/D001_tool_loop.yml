@@ -1,1 +1,7 @@
-
+id: D001
+title: Tool loop / repeated tool calls
+severity: medium
+match:
+  tool: web_request
+  threshold: 5
+  window: 8
