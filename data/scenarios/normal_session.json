@@ -1,0 +1,10 @@
+{
+  "tenant": "tenant_a",
+  "env": "lab",
+  "actor": {"id":"user:demo","kind":"user"},
+  "steps": [
+    {"event_type":"RETRIEVAL","resource":"kb://runbooks/soc","query":"how to escalate an alert","records":3},
+    {"event_type":"TOOL_CALL","tool":"web_request","args":{"url":"https://example.com/status"},"target":"example.com","result":{"status":"ok","code":200}},
+    {"event_type":"POLICY_DECISION","decision":"allow","policy_id":"policy:tools","rule_id":"rule:web_request_allow","reason":"domain allowlist"}
+  ]
+}
