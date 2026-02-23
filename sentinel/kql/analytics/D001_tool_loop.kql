@@ -1,0 +1,12 @@
+let ToolLoopThreshold = 5;
+let Lookback = 1h;
+AgenticSocLab_CL
+| where EventType == "TOOL_CALL"
+| where todatetime(EventTime) >= ago(Lookback)
+| extend Tool=tostring(RawEvent.tool_call.tool),
+         Target=tostring(RawEvent.tool_call.target)
+| summarize Calls=count(), FirstSeen=min(todatetime(EventTime)), LastSeen=max(todatetime(EventTime))
+  by SessionId, TraceId, Tenant, ActorId, Tool, Target
+| where Calls >= ToolLoopThreshold
+| project TimeGenerated=LastSeen, Severity="Medium", RuleId="D001", Calls, FirstSeen, LastSeen,
+          SessionId, TraceId, Tenant, ActorId, Tool, Target
