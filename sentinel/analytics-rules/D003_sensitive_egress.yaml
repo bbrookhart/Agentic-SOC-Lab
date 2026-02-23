@@ -1,0 +1,73 @@
+id: 33333333-3333-3333-3333-333333333333
+name: Agentic SOC Lab - Sensitive Data Egress via External Tool (D003)
+description: >
+  Detects outbound tool usage (web/email/webhook) where tool arguments contain indicators of
+  sensitive data (e.g., API keys, private keys, SSNs, tokens). This is a critical exfiltration signal.
+  Tune patterns and tool allowlists based on your environment and acceptable outbound connectors.
+severity: High
+status: Available
+requiredDataConnectors: []
+queryFrequency: PT5M
+queryPeriod: PT1H
+triggerOperator: GreaterThan
+triggerThreshold: 0
+suppressionDuration: PT1H
+suppressionEnabled: false
+tactics:
+  - Exfiltration
+relevantTechniques:
+  - T1041
+query: |
+  let Lookback = 1h;
+  // Keep patterns short; extend as needed.
+  let SensitivePatterns = dynamic([
+    @"AKIA[0-9A-Z]{16}",
+    @"-----BEGIN PRIVATE KEY-----",
+    @"\b\d{3}-\d{2}-\d{4}\b",
+    @"xox[baprs]-"
+  ]);
+  let ExternalTools = dynamic(["web_request","email_send","webhook_post"]);
+  AgenticSocLab_CL
+  | where EventType == "TOOL_CALL"
+  | where todatetime(EventTime) >= ago(Lookback)
+  | extend Tool=tostring(RawEvent.tool_call.tool),
+           Target=tostring(RawEvent.tool_call.target),
+           Args=tostring(RawEvent.tool_call.args),
+           ToolBlob=tostring(RawEvent.tool_call)
+  | where Tool in (ExternalTools)
+  | where ToolBlob has_any (SensitivePatterns) or Args has_any (SensitivePatterns)
+  | project
+      TimeGenerated=todatetime(EventTime),
+      Severity="High",
+      RuleId="D003",
+      SessionId,
+      TraceId,
+      Tenant,
+      ActorId,
+      Tool,
+      Target,
+      Args
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: ActorId
+customDetails:
+  RuleId: RuleId
+  SessionId: SessionId
+  TraceId: TraceId
+  Tool: Tool
+  Target: Target
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: PT1H
+    matchingMethod: Selected
+    groupByEntities: []
+    groupByAlertDetails:
+      - SessionId
+      - TraceId
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
