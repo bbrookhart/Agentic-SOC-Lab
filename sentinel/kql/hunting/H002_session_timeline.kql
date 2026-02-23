@@ -1,0 +1,5 @@
+let sid = "<PASTE_SESSION_ID>";
+AgenticSocLab_CL
+| where SessionId == sid
+| project EventTime, EventType, RuleId, Severity, TraceId, Tenant, ActorId, RawEvent
+| order by todatetime(EventTime) asc
