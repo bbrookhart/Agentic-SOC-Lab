@@ -1,0 +1,9 @@
+let Lookback = 24h;
+AgenticSocLab_CL
+| where EventType == "TOOL_CALL"
+| where todatetime(EventTime) >= ago(Lookback)
+| extend Tool=tostring(RawEvent.tool_call.tool),
+         Target=tostring(RawEvent.tool_call.target)
+| where Tool in ("web_request","email_send","webhook_post")
+| project EventTime, SessionId, TraceId, Tenant, ActorId, Tool, Target, Args=RawEvent.tool_call.args
+| order by todatetime(EventTime) desc
