@@ -1,0 +1,11 @@
+let Lookback = 24h;
+AgenticSocLab_CL
+| where EventType in ("RETRIEVAL","POLICY_DECISION")
+| where todatetime(EventTime) >= ago(Lookback)
+| extend RequestedTenant=tostring(RawEvent.retrieval.requested_tenant),
+         Decision=tostring(RawEvent.policy.decision),
+         Rule=tostring(RawEvent.policy.rule_id)
+| where (EventType=="RETRIEVAL" and isnotempty(RequestedTenant) and RequestedTenant != tostring(Tenant))
+   or (EventType=="POLICY_DECISION" and Decision=="deny" and Rule has "tenant")
+| project EventTime, EventType, SessionId, TraceId, Tenant, ActorId, RequestedTenant, Decision, Rule, RawEvent
+| order by todatetime(EventTime) desc
