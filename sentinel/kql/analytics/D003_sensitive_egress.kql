@@ -1,0 +1,19 @@
+let Lookback = 1h;
+let SensitivePatterns = dynamic([
+  @"AKIA[0-9A-Z]{16}",
+  @"-----BEGIN PRIVATE KEY-----",
+  @"\b\d{3}-\d{2}-\d{4}\b",
+  @"xox[baprs]-"
+]);
+let ExternalTools = dynamic(["web_request","email_send","webhook_post"]);
+AgenticSocLab_CL
+| where EventType == "TOOL_CALL"
+| where todatetime(EventTime) >= ago(Lookback)
+| extend Tool=tostring(RawEvent.tool_call.tool),
+         Target=tostring(RawEvent.tool_call.target),
+         Args=tostring(RawEvent.tool_call.args),
+         ToolBlob=tostring(RawEvent.tool_call)
+| where Tool in (ExternalTools)
+| where ToolBlob has_any (SensitivePatterns) or Args has_any (SensitivePatterns)
+| project TimeGenerated=todatetime(EventTime), Severity="High", RuleId="D003",
+          SessionId, TraceId, Tenant, ActorId, Tool, Target, Args
