@@ -1,0 +1,75 @@
+id: 11111111-1111-1111-1111-111111111111
+name: Agentic SOC Lab - Tool Loop / Repeated Tool Calls (D001)
+description: >
+  Detects repeated TOOL_CALL activity for the same tool and target within a short time window.
+  This may indicate agent probing, automation abuse, or an agent stuck in a retry loop.
+  Tune thresholds per environment and tool sensitivity.
+severity: Medium
+status: Available
+requiredDataConnectors: []
+queryFrequency: PT5M
+queryPeriod: PT1H
+triggerOperator: GreaterThan
+triggerThreshold: 0
+suppressionDuration: PT30M
+suppressionEnabled: false
+tactics:
+  - Discovery
+  - Execution
+relevantTechniques:
+  - T1059
+  - T1071
+query: |
+  let ToolLoopThreshold = 5;
+  let ToolLoopLookback = 1h;
+  AgenticSocLab_CL
+  | where EventType == "TOOL_CALL"
+  | where todatetime(EventTime) >= ago(ToolLoopLookback)
+  | extend Tool=tostring(RawEvent.tool_call.tool),
+           Target=tostring(RawEvent.tool_call.target)
+  | summarize
+      Calls=count(),
+      FirstSeen=min(todatetime(EventTime)),
+      LastSeen=max(todatetime(EventTime))
+    by SessionId, TraceId, Tenant, ActorId, Tool, Target
+  | where Calls >= ToolLoopThreshold
+  | project
+      TimeGenerated=LastSeen,
+      Severity="Medium",
+      RuleId="D001",
+      Calls,
+      FirstSeen,
+      LastSeen,
+      SessionId,
+      TraceId,
+      Tenant,
+      ActorId,
+      Tool,
+      Target
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: ActorId
+customDetails:
+  RuleId: RuleId
+  SessionId: SessionId
+  TraceId: TraceId
+  Tool: Tool
+  Target: Target
+  Calls: Calls
+  FirstSeen: FirstSeen
+  LastSeen: LastSeen
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: PT1H
+    matchingMethod: Selected
+    groupByEntities: []
+    groupByAlertDetails:
+      - SessionId
+      - TraceId
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
