@@ -1,0 +1,97 @@
+id: 44444444-4444-4444-4444-444444444444
+name: Agentic SOC Lab - Deny Then Exfil Escalation Chain (D004)
+description: >
+  Detects an escalation chain where a boundary-related policy denial (e.g., tenant boundary)
+  is followed by outbound external tool usage containing sensitive indicators.
+  This suggests an attacker/agent pivoting after controls blocked initial access.
+severity: High
+status: Available
+requiredDataConnectors: []
+queryFrequency: PT5M
+queryPeriod: PT1H
+triggerOperator: GreaterThan
+triggerThreshold: 0
+suppressionDuration: PT1H
+suppressionEnabled: false
+tactics:
+  - Collection
+  - Exfiltration
+relevantTechniques:
+  - T1213
+  - T1041
+query: |
+  let Lookback = 1h;
+  let ExternalTools = dynamic(["web_request","email_send","webhook_post"]);
+  let SensitivePatterns = dynamic([
+    @"AKIA[0-9A-Z]{16}",
+    @"-----BEGIN PRIVATE KEY-----",
+    @"\b\d{3}-\d{2}-\d{4}\b",
+    @"xox[baprs]-"
+  ]);
+  let DenyRulePrefixes = dynamic(["rule:tenant_boundary","rule:retrieval_"]);
+
+  let Denies =
+    AgenticSocLab_CL
+    | where EventType == "POLICY_DECISION"
+    | where todatetime(EventTime) >= ago(Lookback)
+    | extend Decision=tostring(RawEvent.policy.decision),
+             Rule=tostring(RawEvent.policy.rule_id)
+    | where Decision == "deny"
+    | where array_length(DenyRulePrefixes) == 0 or Rule has_any (DenyRulePrefixes)
+    | project DenyTime=todatetime(EventTime), SessionId, TraceId, Tenant, ActorId, DeniedRule=Rule;
+
+  let Outbound =
+    AgenticSocLab_CL
+    | where EventType == "TOOL_CALL"
+    | where todatetime(EventTime) >= ago(Lookback)
+    | extend Tool=tostring(RawEvent.tool_call.tool),
+             Target=tostring(RawEvent.tool_call.target),
+             ToolBlob=tostring(RawEvent.tool_call),
+             Args=tostring(RawEvent.tool_call.args)
+    | where Tool in (ExternalTools)
+    | where ToolBlob has_any (SensitivePatterns) or Args has_any (SensitivePatterns)
+    | project OutTime=todatetime(EventTime), SessionId, TraceId, Tenant, ActorId, Tool, Target, Args;
+
+  Denies
+  | join kind=innerunique Outbound on SessionId, TraceId
+  | where OutTime >= DenyTime and OutTime <= DenyTime + 30m
+  | project
+      TimeGenerated=OutTime,
+      Severity="High",
+      RuleId="D004",
+      SessionId,
+      TraceId,
+      Tenant,
+      ActorId,
+      DeniedRule,
+      DenyTime,
+      Tool,
+      Target,
+      OutTime,
+      Args
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: ActorId
+customDetails:
+  RuleId: RuleId
+  SessionId: SessionId
+  TraceId: TraceId
+  DeniedRule: DeniedRule
+  DenyTime: DenyTime
+  Tool: Tool
+  Target: Target
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: PT1H
+    matchingMethod: Selected
+    groupByEntities: []
+    groupByAlertDetails:
+      - SessionId
+      - TraceId
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
