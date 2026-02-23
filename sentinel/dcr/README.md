@@ -41,6 +41,3 @@ This repo exports agent telemetry into an ingestion-friendly NDJSON format inten
 ## Operational tuning
 - Consider redaction of sensitive fields before ingesting into production environments.
 - Restrict retention and access controls for `RawEvent` if it may contain secrets/PII.
-
-mkdir -p sentinel/kql/analytics sentinel/kql/hunting sentinel/dcr
-# add files above
