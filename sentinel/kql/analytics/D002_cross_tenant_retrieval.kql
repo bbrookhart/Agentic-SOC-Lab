@@ -1,0 +1,14 @@
+let Lookback = 1h;
+AgenticSocLab_CL
+| where EventType == "RETRIEVAL"
+| where todatetime(EventTime) >= ago(Lookback)
+| extend RequestedTenant=tostring(RawEvent.retrieval.requested_tenant),
+         SessionTenant=tostring(Tenant),
+         Resource=tostring(RawEvent.retrieval.resource),
+         Scope=tostring(RawEvent.retrieval.scope),
+         QueryText=tostring(RawEvent.retrieval.query),
+         Records=tolong(RawEvent.retrieval.records)
+| where isnotempty(RequestedTenant) and RequestedTenant != SessionTenant
+| project TimeGenerated=todatetime(EventTime), Severity="High", RuleId="D002",
+          SessionId, TraceId, Tenant=SessionTenant, RequestedTenant, ActorId,
+          Resource, Scope, Records, QueryText
