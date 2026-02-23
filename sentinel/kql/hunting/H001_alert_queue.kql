@@ -1,0 +1,5 @@
+AgenticSocLab_CL
+| where EventType == "ALERT"
+| where Severity in ("high","critical")
+| project EventTime, Severity, RuleId, TraceId, SessionId, Tenant, ActorId, RawEvent
+| order by todatetime(EventTime) desc
