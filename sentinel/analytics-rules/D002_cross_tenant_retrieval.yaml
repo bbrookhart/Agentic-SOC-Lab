@@ -1,0 +1,72 @@
+id: 22222222-2222-2222-2222-222222222222
+name: Agentic SOC Lab - Cross-tenant Retrieval Attempt (D002)
+description: >
+  Detects retrieval events where the requested tenant differs from the session tenant,
+  indicating a boundary violation attempt in an agent/RAG workflow.
+  This should be treated as a high-severity confidentiality risk.
+severity: High
+status: Available
+requiredDataConnectors: []
+queryFrequency: PT5M
+queryPeriod: PT1H
+triggerOperator: GreaterThan
+triggerThreshold: 0
+suppressionDuration: PT1H
+suppressionEnabled: false
+tactics:
+  - Collection
+  - Exfiltration
+relevantTechniques:
+  - T1213
+query: |
+  let Lookback = 1h;
+  AgenticSocLab_CL
+  | where EventType == "RETRIEVAL"
+  | where todatetime(EventTime) >= ago(Lookback)
+  | extend RequestedTenant=tostring(RawEvent.retrieval.requested_tenant),
+           SessionTenant=tostring(Tenant),
+           Resource=tostring(RawEvent.retrieval.resource),
+           Scope=tostring(RawEvent.retrieval.scope),
+           QueryText=tostring(RawEvent.retrieval.query),
+           Records=tolong(RawEvent.retrieval.records)
+  | where isnotempty(RequestedTenant) and RequestedTenant != SessionTenant
+  | project
+      TimeGenerated=todatetime(EventTime),
+      Severity="High",
+      RuleId="D002",
+      SessionId,
+      TraceId,
+      Tenant=SessionTenant,
+      RequestedTenant,
+      ActorId,
+      Resource,
+      Scope,
+      Records,
+      QueryText
+entityMappings:
+  - entityType: Account
+    fieldMappings:
+      - identifier: Name
+        columnName: ActorId
+customDetails:
+  RuleId: RuleId
+  SessionId: SessionId
+  TraceId: TraceId
+  Tenant: Tenant
+  RequestedTenant: RequestedTenant
+  Resource: Resource
+  Scope: Scope
+  Records: Records
+incidentConfiguration:
+  createIncident: true
+  groupingConfiguration:
+    enabled: true
+    reopenClosedIncident: false
+    lookbackDuration: PT1H
+    matchingMethod: Selected
+    groupByEntities: []
+    groupByAlertDetails:
+      - SessionId
+      - TraceId
+eventGroupingSettings:
+  aggregationKind: AlertPerResult
